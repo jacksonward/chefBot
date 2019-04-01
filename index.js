@@ -9,6 +9,7 @@ const got = require ('got')
 //Define base URL, we will append queries to this api reference
 const BASE_URL = 'https://api.dineoncampus.com/v1/location/menu?site_id=5751fd2590975b60e04891fe&platform=0&'
 
+// Be sure to change botId for testing and production
 const botId = "134ad64e73ea10a1b5d038c45a"
 
 //Initialize global menu object
@@ -66,7 +67,6 @@ async function run() {
 			console.log(error)
 		})
 	})
-	console.log('running!')
 }
 
 //run for the first time
@@ -111,6 +111,37 @@ function sanitize(string) {
 	})
 
 	return message
+}
+
+// April Fools!
+function aprilFools(location, period) {
+
+	let grossStuff = ['Fried Worms', 'A normal burger but the cheese is moldy', 'A burger where everything is expired but the cheese is fine', 'Literal feces w/ rum sauce', 'Cold-ass Broccoli', 'Poppy-seed Beagle', 'Sheep\'s head', 'Pasta with toenail clippings', 'Garlic Mashed Potatoes, because heaven forbid we ever have regular mashed potatoes', 'Raw pork chops', 'Plastic-flavored Poptarts', 'Fermented Shark', 'Shell-in Sea Turtle', 'Miscellaneous Jelly Beans', 'Glob of dip-spit', 'Goat eye spread on toast', 'Barnacles', 'Curry Pancakes', 'Cod dipped in Seawater', '[Insert mediocre mexican food that no one really likes, but the other lines actually manage to be worse, so, what the hell]', 'Four Cheese Lasgna, but every cheese is cheddar', 'Bear Back Ribs', 'Canned Macaroni & Cheese', 'Mayonaise Sandwiches', 'Raw Oysters', 'Thousand Year Old Eggs', 'Mustard Pie']
+
+	function shuffle(array) {
+	  	var currentIndex = array.length, temporaryValue, randomIndex;
+	  	// While there remain elements to shuffle...
+	  	while (0 !== currentIndex) {
+
+		    // Pick a remaining element...
+		    randomIndex = Math.floor(Math.random() * currentIndex);
+		    currentIndex -= 1;
+
+		    // And swap it with the current element.
+		    temporaryValue = array[currentIndex];
+		    array[currentIndex] = array[randomIndex];
+		    array[randomIndex] = temporaryValue;
+	  	}
+  		return array;
+	}
+
+	let shuffledStuff = shuffle(grossStuff)
+	shuffledStuff = shuffledStuff.slice(0, 6)
+
+	let menuItemsString = shuffledStuff.join(', ')
+	let response = `${period} at ${location} will have the following: ${menuItemsString}.`
+
+	return response
 }
 
 function readMenu(location, period) {
@@ -173,19 +204,92 @@ function readMenu(location, period) {
 	return response
 }
 
+// Search dining halls for menu item
+function find(string) {
+
+	if (string.length < 3) {
+		console.log('cannot search for a string shorter than 3 characters')
+		return
+	}
+	
+	// Search fulbright
+	const search = (location) => {
+		let items = []		// item to be found
+		let locations = [] 	// locations to be found at
+		let times = [] 		// times available
+		let lines = [] 		// lines to be found in
+		for (var period in menu[location]) {
+			if (menu[location].hasOwnProperty(period)) {
+				for (var category in menu[location][period]) {
+					if (menu[location][period].hasOwnProperty(category)) {
+						menu[location][period][category].forEach((item) => {
+							if (item.toLowerCase().includes(string.toLowerCase())) {
+								items.push(item)
+								times.push(period)
+								lines.push(category)
+							}
+						})
+					}
+				}
+			}
+		}
+		let responses = {
+			Breakfast: [],
+			Lunch: [],
+			Dinner: []
+		}
+
+		items.forEach((item, index) => {
+			responses[times[index]].push(`${items[index]} | ${lines[index]}`)
+		})
+
+		// Declare response
+		let responseString = `${location}:\r\n`
+		for (var time in responses) {
+			if (responses.hasOwnProperty(time)) {
+
+				if (responses[time] == undefined || responses[time].length == 0) {
+					// Do nothing
+				} else {
+					responseString += `${time} -> \r\n`
+
+					responses[time].forEach((el) => {
+						responseString += `${el}\r\n`
+					})
+
+					responseString += `\r\n`
+				}
+			}
+		}
+		return responseString
+	}
+	broadcast(search('Fulbright Dining Hall'))
+	broadcast(search('Brough Dining Hall'))
+}
+
 app.post('/', function(req, res) {
 	var sender = req.body.name
 	var message = (req.body.text).toLowerCase()
 	console.log("Got message from " + sender + " that says: " + message)
-	if (sender !== 'Chef++') {
+	if (sender !== 'Chef++' && sender !== 'chefTest') {
 		if (message.startsWith('.debug')) {
 			console.log(menu)
 			return
 		}
+
 		if (message.startsWith('.')) {
 			// sanitize user input to accept common variations of location names
 			// Ex. "fulbright" becomes "fulbright dining hall", which the bot can use
 			message = sanitize(message)		
+
+			if (message.startsWith('.search')) {
+				// split the message into words to get item argument
+				let messageArray = message.split(" ")
+				let itemArgument = messageArray[1]
+				// find the item and broadcast the result || two messages
+				find(itemArgument)
+				return
+			}
 
 			let foundLoc
 			let foundPeriod
@@ -211,9 +315,16 @@ app.post('/', function(req, res) {
 			}
 
 			// Declare response that bot will send to chat
-			let response = readMenu(foundLoc, foundPeriod)
+			// let response = readMenu(foundLoc, foundPeriod)
+
+			// April fools!!
+			let response = aprilFools(foundLoc, foundPeriod)
 			broadcast(response)
 		}
 	}
 })
 app.listen(port, () => console.log(`The Chef is listening on port ${port}!`))
+
+// setTimeout(() => {
+
+// }, 10000)
