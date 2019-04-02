@@ -16,6 +16,7 @@ The bot will respond with a message like this:
 ### Search for item
 To search dining halls for a certain menu item, use '.search [menu item]'
 For example:
+
 `.search chicken`
 
 will return a formatted list of meal items matching or contained the requested menu item,
