@@ -19,7 +19,7 @@ For example:
 
 `.search chicken`
 
-will return a formatted list of meal items matching or contained the requested menu item,
+will return a formatted list of meal items matching or containing the requested menu item,
 with information about where it is being served as well as during what period it will be served.
 The bot will return up to two messages (one for each dining hall) like this:
 
